@@ -1,193 +1,195 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Calcul des Projecteurs</title>
-  <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcul des Projecteurs</title>
+    <style>
+        html, body {
+            touch-action: manipulation; /* Désactive le zoom double-tap, garde le pincement */
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+        }
 
-.select-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* centre horizontalement */
-  margin-top: 30px;     /* espace au-dessus */
-}
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
 
-.select-container label {
-  margin-bottom: 8px;
-  font-weight: bold;
-  font-size: 16px;
-}
+        input, button, select {
+            padding: 8px;
+            margin: 5px;
+            font-size: 16px;
+        }
 
-select {
-  padding: 10px 16px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: 1px solid #888;
-  background-color: #e3bb1d;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%20viewBox='0%200%2016%2016'%3E%3Cpath%20fill='gray'%20d='M4%206l4%204%204-4z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 12px;
-  padding-right: 40px;
-}
+        select {
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
 
-select:hover {
-  background-color: #e7d58a;
-  border-color: #555;
-}
+        p, h1 {
+            font-size: 18px;
+            color: #333;
+        }
 
+        .error {
+            color: red;
+        }
 
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      max-width: 800px;
-      width: 100%;
-      text-align: center;
-    }
-    input, button {
-      padding: 8px;
-      margin: 5px;
-      font-size: 16px;
-    }
-    p, h1 {
-      font-size: 18px;
-      color: #333;
-    }
-    .error {
-      color: red;
-    }
-    .result, .suggestions {
-      margin-top: 20px;
-      text-align: left;
-    }
-    .range-container {
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    input[type="range"] {
-      width: 300px;
-      margin-right: 10px;
-    }
-    .editable-value {
-      font-size: 16px;
-      font-weight: bold;
-      color: red;
-      width: 80px;
-      text-align: center;
-    }
-    .button-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .arrow-button {
-      padding: 6px;
-      font-size: 14px;
-      background-color: #f1f1f1;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      border-radius: 5px;
-      margin: 2px;
-    }
-    .arrow-button:hover {
-      background-color: #ddd;
-    }
-    .arrow-button:focus {
-      outline: none;
-    }
-  </style>
+        .result, .suggestions {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .range-container {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            width: 300px;
+            margin-right: 10px;
+        }
+
+        .editable-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: red;
+            width: 80px;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .arrow-button {
+            padding: 6px;
+            font-size: 14px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 2px;
+        }
+
+        .arrow-button:hover {
+            background-color: #ddd;
+        }
+
+        .arrow-button:focus {
+            outline: none;
+        }
+
+        #mode {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Calcul des Projecteurs</h1>
+    <div class="container">
+        <h1>Calcul des Projecteurs</h1>
 
-    <label for="projos">Nombre de projos :</label>
-    <div class="button-container">
-      <button class="arrow-button" onclick="changeProjos(-1)">↓</button>
-      <input type="number" id="projos" class="editable-value" value="4" min="2" step="1" oninput="calculer()">
-      <button class="arrow-button" onclick="changeProjos(1)">↑</button>
-    </div>
+        <label for="projos">Nombre de projos :</label>
+        <div class="button-container">
+            <button class="arrow-button" onclick="changeProjos(-1)">↓</button>
+            <input type="number" id="projos" class="editable-value" value="2" min="2" step="1" oninput="calculer()">
+            <button class="arrow-button" onclick="changeProjos(1)">↑</button>
+        </div>
 
-    <label for="ouv">Ouverture (en mètres) :</label>
-    <div class="range-container">
-      <input type="range" id="ouv" min="0.8" max="12" step="0.1" value="5" oninput="syncSliderValue(); calculer();">
-      <input type="number" id="editable-value" class="editable-value" value="5.00" min="0.8" max="12" step="0.1" oninput="syncInputValue(); calculer();">
-    </div>
+        <label for="ouv">Ouverture (en mètres) :</label>
+        <div class="range-container">
+            <input type="range" id="ouv" min="0.8" max="12" step="0.1" value="5" oninput="syncSliderValue(); calculer();">
+            <input type="number" id="editable-value" class="editable-value" value="5.00" min="0.8" max="12" step="0.1" oninput="syncInputValue(); calculer();">
+        </div>
 
-    <label for="tolerance">Tolérance (en %):</label>
-    <div class="button-container">
-      <button class="arrow-button" onclick="changeTolerance(-10)">↓</button>
-      <input type="number" id="tolerance" class="editable-value" value="10" min="0" max="50" step="10" oninput="calculer()">
-      <button class="arrow-button" onclick="changeTolerance(10)">↑</button>
-    </div>
+        <label for="tolerance">Tolérance (en %):</label>
+        <div class="button-container">
+            <button class="arrow-button" onclick="changeTolerance(-10)">↓</button>
+            <input type="number" id="tolerance" class="editable-value" value="10" min="0" max="50" step="10" oninput="calculer()">
+            <button class="arrow-button" onclick="changeTolerance(10)">↑</button>
+        </div>
 
-    <div class="select-container">
-        <label for="mode">Mode de répartition :</label><br>
+        <label for="mode">Mode de répartition :</label>
+        <br>
         <select id="mode" onchange="calculer()">
             <option value="sym">Symétrique</option>
             <option value="lin">Linéaire (à partir d’un bord)</option>
             <option value="gold">Doré (nombre d’or)</option>
         </select>
-      </div>
-      
-    <div id="error-message" class="error"></div>
-    <div id="result" class="result"></div>
-    <div id="suggestions" class="suggestions"><h2>Propositions alternatives</h2></div>
-  </div>
 
-  <script>
-    function getCurrentMode() {
-      return document.getElementById("mode").value;
-    }
+        <div id="error-message" class="error"></div>
+        <div id="result" class="result"></div>
 
-    function changeProjos(delta) {
-      const projosInput = document.getElementById("projos");
-      projosInput.value = Math.max(2, parseInt(projosInput.value, 10) + delta);
-      calculer();
-    }
+        <div id="suggestions" class="suggestions">
+            <h2>Propositions alternatives</h2>
+        </div>
+    </div>
 
-    function changeTolerance(delta) {
-      const toleranceInput = document.getElementById("tolerance");
-      let newValue = Math.max(0, Math.min(50, parseInt(toleranceInput.value, 10) + delta));
-      toleranceInput.value = newValue;
-      calculer();
-    }
+    <script>
+        // Empêche le zoom par double-tap sans désactiver le pincement
+        let lastTouchTime = 0;
+        document.addEventListener('touchend', function (e) {
+            const now = new Date().getTime();
+            if (now - lastTouchTime <= 300) {
+                e.preventDefault();
+            }
+            lastTouchTime = now;
+        }, { passive: false });
 
-    function syncInputValue() {
-      const input = document.getElementById("editable-value");
-      const slider = document.getElementById("ouv");
-      slider.value = parseFloat(input.value).toFixed(1);
-      calculer();
-    }
+        // Sélection automatique du contenu lors du clic
+        document.addEventListener('click', function (e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'NUMBER') {
+                e.target.select();
+            }
+        });
 
-    function syncSliderValue() {
-      const input = document.getElementById("editable-value");
-      const slider = document.getElementById("ouv");
-      input.value = parseFloat(slider.value).toFixed(1);
-      calculer();
-    }
+        function getCurrentMode() {
+            return document.getElementById("mode").value;
+        }
 
-    function afficherPositions(pos) {
-      const result = document.getElementById("result");
-      result.innerHTML = `<p>Positions :</p><ul>${pos.map(p => `<li>${p} m</li>`).join("")}</ul>`;
-    }
+        function changeProjos(delta) {
+            const projosInput = document.getElementById("projos");
+            projosInput.value = Math.max(2, parseInt(projosInput.value, 10) + delta);
+            calculer();
+        }
 
-    function calculer() {
+        function changeTolerance(delta) {
+            const toleranceInput = document.getElementById("tolerance");
+            let newValue = Math.max(0, Math.min(50, parseInt(toleranceInput.value, 10) + delta));
+            toleranceInput.value = newValue;
+            calculer();
+        }
+
+        function syncInputValue() {
+            const input = document.getElementById("editable-value");
+            const slider = document.getElementById("ouv");
+            slider.value = parseFloat(input.value).toFixed(1);
+            calculer();
+        }
+
+        function syncSliderValue() {
+            const input = document.getElementById("editable-value");
+            const slider = document.getElementById("ouv");
+            input.value = parseFloat(slider.value).toFixed(1);
+            calculer();
+        }
+
+        function calculer() {
       const mode = getCurrentMode();
       const projos = parseInt(document.getElementById("projos").value, 10);
       const ouv = parseFloat(document.getElementById("editable-value").value);
@@ -322,8 +324,7 @@ select:hover {
         `<p>Ouverture : ${s.ouv} m<br>Positions : ${s.positions.join(" m, ")} m</p>`
       ).join("");
     }
-
-    window.onload = calculer;
-  </script>
+        window.onload = calculer;
+    </script>
 </body>
 </html>
