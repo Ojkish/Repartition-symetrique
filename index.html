@@ -2,30 +2,34 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calcul des Projecteurs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">    <title>Calcul des Projecteurs</title>
     <style>
         html, body {
-            touch-action: manipulation; /* Désactive le zoom double-tap, garde le pincement */
             font-family: Arial, sans-serif;
             padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            height: 100vh;
-            margin: 0;
+            background-color: #fff;
+            overflow-x: hidden; /* ← empêche le débordement horizontal */
         }
 
-        .container {
-            max-width: 800px;
-            width: 100%;
-            text-align: center;
-        }
+.container {
+    max-width: 800px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 0 10px; /* ← Ajoute du padding horizontal */
+}
 
         input, button, select {
             padding: 8px;
             margin: 5px;
             font-size: 16px;
+            box-sizing: border-box;
         }
 
         select {
