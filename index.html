@@ -48,6 +48,9 @@
         .result, .suggestions {
             margin-top: 20px;
             text-align: left;
+            font-weight: bold; /* Gras */
+            color: #2225b6; /* Bleu */
+            font-size: 20px;
         }
 
         .range-container {
@@ -145,7 +148,7 @@
         let lastTouchTime = 0;
         document.addEventListener('touchend', function (e) {
             const now = new Date().getTime();
-            if (now - lastTouchTime <= 300) {
+            if (now - lastTouchTime <= 100) {
                 e.preventDefault();
             }
             lastTouchTime = now;
