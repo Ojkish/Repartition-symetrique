@@ -206,6 +206,14 @@
             calculer();
         }
 
+        function afficherPositions(pos) {
+          const result = document.getElementById("result");
+          result.innerHTML = `<p>Positions :</p><ul>${pos.map(p => `<li>${p} m</li>`).join("")}</ul>`;
+        }
+
+
+
+
         function calculer() {
       const mode = getCurrentMode();
       const projos = parseInt(document.getElementById("projos").value, 10);
