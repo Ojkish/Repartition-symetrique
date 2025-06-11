@@ -26,6 +26,15 @@
     padding: 0 10px; /* ← Ajoute du padding horizontal */
 }
 
+.field-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centre horizontalement */
+  margin-top: 15px;    /* espace au-dessus */
+}
+
+
+
         input, button, select {
             padding: 8px;
             margin: 5px;
@@ -48,11 +57,12 @@
 
         .error {
             color: red;
+            text-align: center;
         }
 
         .result {
     margin-top: 20px;
-    text-align: left;
+    text-align: center;
     font-weight: bold;       /* Texte en gras */
     color: #2225b6;          /* Bleu */
     font-size: 20px;         /* Taille de police plus grande */
@@ -60,7 +70,7 @@
 
 .suggestions {
     margin-top: 20px;
-    text-align: left;
+    text-align: center;
     color: black;            /* Suggestions en noir */
     font-weight: normal;     /* Pas de gras */
     font-size: 16px;         /* Taille normale */
@@ -128,10 +138,23 @@
             <button class="arrow-button" onclick="changeProjos(1)">↑</button>
         </div>
 
-        <label for="ouv">Ouverture (en mètres) :</label>
-        <div class="range-container">
-            <input type="range" id="ouv" min="0.8" max="12" step="0.1" value="5" oninput="syncSliderValue(); calculer();">
-            <input type="number" id="editable-value" class="editable-value" value="5.00" min="0.8" max="12" step="0.1" oninput="syncInputValue(); calculer();">
+        <div class="field-container">
+          <label for="editable-value">Ouverture (en mètres) :</label>
+          <input
+            type="number"
+            id="editable-value"
+            class="editable-value"
+            value="5.00"
+            min="0.8" max="12" step="0.1"
+            oninput="syncInputValue(); calculer();"
+          >
+          <input
+            type="range"
+            id="ouv"
+            min="0.8" max="12" step="0.1"
+            value="5"
+            oninput="syncSliderValue(); calculer();"
+          >
         </div>
 
         <label for="tolerance">Tolérance (en %):</label>
