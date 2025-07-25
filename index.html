@@ -168,8 +168,8 @@
         <br>
         <select id="mode" onchange="calculer()">
             <option value="sym">Symétrique</option>
-            <option value="lin">Linéaire (à partir d’un bord)</option>
-            <option value="gold">Doré (nombre d’or)</option>
+            <option value="lin">Linéaire (à partir d'un bord)</option>
+            <option value="gold">Doré (nombre d'or)</option>
         </select>
 
         <div id="error-message" class="error"></div>
@@ -180,199 +180,209 @@
         </div>
     </div>
 
-    <script>
-        // Empêche le zoom par double-tap sans désactiver le pincement
-        let lastTouchTime = 0;
-        document.addEventListener('touchend', function (e) {
-            const now = new Date().getTime();
-            if (now - lastTouchTime <= 100) {
-                e.preventDefault();
-            }
-            lastTouchTime = now;
-        }, { passive: false });
-
-        // Sélection automatique du contenu lors du clic
-        document.addEventListener('click', function (e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'NUMBER') {
-                e.target.select();
-            }
-        });
-
-        function getCurrentMode() {
-            return document.getElementById("mode").value;
-        }
-
-        function changeProjos(delta) {
-            const projosInput = document.getElementById("projos");
-            projosInput.value = Math.max(2, parseInt(projosInput.value, 10) + delta);
-            calculer();
-        }
-
-        function changeTolerance(delta) {
-            const toleranceInput = document.getElementById("tolerance");
-            let newValue = Math.max(0, Math.min(50, parseInt(toleranceInput.value, 10) + delta));
-            toleranceInput.value = newValue;
-            calculer();
-        }
-
-        function syncInputValue() {
-            const input = document.getElementById("editable-value");
-            const slider = document.getElementById("ouv");
-            slider.value = parseFloat(input.value).toFixed(1);
-            calculer();
-        }
-
-        function syncSliderValue() {
-            const input = document.getElementById("editable-value");
-            const slider = document.getElementById("ouv");
-            input.value = parseFloat(slider.value).toFixed(1);
-            calculer();
-        }
-
-        function afficherPositions(pos) {
-          const result = document.getElementById("result");
-          result.innerHTML = `<p>Positions :</p><ul>${pos.map(p => `<li>${p} m</li>`).join("")}</ul>`;
-        }
-
-
-
-
-        function calculer() {
-      const mode = getCurrentMode();
-      const projos = parseInt(document.getElementById("projos").value, 10);
-      const ouv = parseFloat(document.getElementById("editable-value").value);
-      const tolerance = parseInt(document.getElementById("tolerance").value, 10) / 100;
-
-      const error = document.getElementById("error-message");
-      const result = document.getElementById("result");
-      const suggestions = document.getElementById("suggestions");
-
-      error.textContent = "";
-      result.innerHTML = "";
-      suggestions.innerHTML = "<h2>Propositions alternatives</h2>";
-
-      if (isNaN(projos) || isNaN(ouv)) {
-        error.textContent = "Veuillez entrer des valeurs valides.";
-        return;
+<script>
+  // Empêche le zoom par double-tap sans désactiver le pincement
+  let lastTouchTime = 0;
+  document.addEventListener('touchend', function (e) {
+      const now = new Date().getTime();
+      if (now - lastTouchTime <= 100) {
+          e.preventDefault();
       }
+      lastTouchTime = now;
+  }, { passive: false });
 
-      // --- MODE DORÉ ---
-      if (mode === "gold") {
-        if (projos < 4) {
-          afficherPositions([]);
-          return;
-        }
-
-        const phi = (1 + Math.sqrt(5)) / 2;
-        const nbIntervalles = projos - 1;
-        let motifs = [];
-
-        if (nbIntervalles === 3) {
-          motifs = [phi, 1, phi];
-        } else if (nbIntervalles === 4) {
-          motifs = [phi, 1, 1, phi];
-        } else if (nbIntervalles === 5) {
-          motifs = [phi * phi, phi, 1, phi, phi * phi];
-        } else {
-          let base = [];
-          for (let i = 0; i < Math.floor(nbIntervalles / 2); i++) {
-            base.unshift(Math.pow(phi, i + 1));
-          }
-          motifs = [...base];
-          if (nbIntervalles % 2 === 1) motifs.push(1);
-          motifs = motifs.concat([...base].reverse());
-        }
-
-        const totalUnscaled = motifs.reduce((sum, val) => sum + val, 0);
-        const scale = ouv / totalUnscaled;
-        const intervals = motifs.map(val => val * scale);
-
-        let positions = [0];
-        for (let i = 0; i < intervals.length; i++) {
-          positions.push(positions[i] + intervals[i]);
-        }
-        const decalage = (positions[positions.length - 1] - positions[0]) / 2;
-        const positionsFinales = positions.map(p => +(p - decalage).toFixed(2));
-
-        afficherPositions(positionsFinales);
-
-        // --- Alternatives tolérées pour mode gold ---
-        const minOuv = ouv * (1 - tolerance);
-        const maxOuv = ouv * (1 + tolerance);
-        const step = 0.01;
-        let validSuggestions = [];
-
-        for (let altOuv = minOuv; altOuv <= maxOuv; altOuv += step) {
-          altOuv = parseFloat(altOuv.toFixed(2));
-          const scaleAlt = altOuv / totalUnscaled;
-          const altIntervals = motifs.map(val => val * scaleAlt);
-          let altPositions = [0];
-          for (let i = 0; i < altIntervals.length; i++) {
-            altPositions.push(altPositions[i] + altIntervals[i]);
-          }
-          const shift = (altPositions[altPositions.length - 1] - altPositions[0]) / 2;
-          altPositions = altPositions.map(p => +(p - shift).toFixed(2));
-
-          const isClean = altPositions.every(pos => Math.abs(Math.round(pos * 100) % 5) === 0);
-          if (isClean && Math.abs(altOuv - ouv) > 0.005) {
-            validSuggestions.push({
-              ouv: altOuv.toFixed(2),
-              positions: altPositions.map(p => p.toFixed(2))
-            });
-          }
-        }
-
-        validSuggestions.sort((a, b) => Math.abs(a.ouv - ouv) - Math.abs(b.ouv - ouv));
-
-        suggestions.innerHTML += validSuggestions.map(s =>
-          `<p>Ouverture : ${s.ouv} m<br>Positions : ${s.positions.join(" m, ")} m</p>`
-        ).join("");
-
-        return;
+  document.addEventListener('click', function (e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'NUMBER') {
+          e.target.select();
       }
+  });
 
-      // --- MODES SYMÉTRIQUE & LINÉAIRE ---
-      const entraxe = ouv / (projos - 1);
-      const positions = [];
-      for (let i = 0; i < projos; i++) {
-        const pos = mode === "sym" ? -ouv / 2 + i * entraxe : i * entraxe;
-        positions.push(pos.toFixed(2));
-      }
+  // Outils
+  function getCurrentMode() {
+    return document.getElementById("mode").value;
+  }
 
-      result.innerHTML = `<p>Mode : ${mode === "sym" ? "Répartition symétrique" : "Répartition sur mètre"}</p>`;
-      result.innerHTML += `<p>Entraxe : ${entraxe.toFixed(2)} m</p>`;
-      result.innerHTML += `<ul>${positions.map(pos => `<li>${pos} m</li>`).join("")}</ul>`;
+  function afficherPositions(pos) {
+    const result = document.getElementById("result");
+    result.innerHTML = `<p>Positions :</p><ul>${pos.map(p => `<li>${p} m</li>`).join("")}</ul>`;
+  }
 
-      const minOuv = ouv * (1 - tolerance);
-      const maxOuv = ouv * (1 + tolerance);
-      const step = 0.01;
-      let validSuggestions = [];
+  function changeProjos(delta) {
+    const projosInput = document.getElementById("projos");
+    projosInput.value = Math.max(2, parseInt(projosInput.value, 10) + delta);
+    calculer();
+  }
 
-      for (let altOuv = minOuv; altOuv <= maxOuv; altOuv += step) {
-        altOuv = parseFloat(altOuv.toFixed(2));
-        const altEntraxe = altOuv / (projos - 1);
-        const altPositions = [];
+  function changeTolerance(delta) {
+    const toleranceInput = document.getElementById("tolerance");
+    let newValue = Math.max(0, Math.min(50, parseInt(toleranceInput.value, 10) + delta));
+    toleranceInput.value = newValue;
+    calculer();
+  }
+
+  function syncInputValue() {
+    const input = document.getElementById("editable-value");
+    const slider = document.getElementById("ouv");
+    slider.value = parseFloat(input.value).toFixed(1);
+    calculer();
+  }
+
+  function syncSliderValue() {
+    const input = document.getElementById("editable-value");
+    const slider = document.getElementById("ouv");
+    input.value = parseFloat(slider.value).toFixed(1);
+    calculer();
+  }
+
+  function nettoyerZeroNegatif(val) {
+    return val === -0 ? 0 : val;
+  }
+
+  function filtrerAlternatives(ouv, projos, tolerance, mode, motifs = null) {
+    const min = ouv * (1 - tolerance);
+    const max = ouv * (1 + tolerance);
+    const minCents = Math.ceil(min * 100);
+    const maxCents = Math.floor(max * 100);
+    const suggestions = [];
+
+    for (let cents = Math.ceil(minCents / 10) * 10; cents <= maxCents; cents += 10) {
+      const altOuv = cents / 100;
+      const entraxe = altOuv / (projos - 1);
+      let altPositions;
+
+      if (mode === "gold" && motifs) {
+        const total = motifs.reduce((sum, val) => sum + val, 0);
+        const scale = altOuv / total;
+        const scaled = motifs.map(m => m * scale);
+        altPositions = [0];
+        for (let i = 0; i < scaled.length; i++) {
+          altPositions.push(altPositions[i] + scaled[i]);
+        }
+        const shift = (altPositions.at(-1) - altPositions[0]) / 2;
+        altPositions = altPositions.map(p => nettoyerZeroNegatif(+(p - shift).toFixed(2)));
+      } else {
+        altPositions = [];
         for (let i = 0; i < projos; i++) {
-          const pos = mode === "sym" ? -altOuv / 2 + i * altEntraxe : i * altEntraxe;
-          altPositions.push(pos);
-        }
-
-        const isClean = altPositions.every(pos => Math.abs(Math.round(pos * 100) % 5) === 0);
-        if (isClean && Math.abs(altOuv - ouv) > 0.005) {
-          validSuggestions.push({
-            ouv: altOuv.toFixed(2),
-            positions: altPositions.map(p => p.toFixed(2))
-          });
+          const pos = mode === "sym" ? -altOuv / 2 + i * entraxe : i * entraxe;
+          altPositions.push(nettoyerZeroNegatif(+pos.toFixed(2)));
         }
       }
 
-      validSuggestions.sort((a, b) => Math.abs(a.ouv - ouv) - Math.abs(b.ouv - ouv));
+      const estPropre = altPositions.every(p => Math.round(p * 100) % 5 === 0);
+      if (estPropre && Math.abs(altOuv - ouv) > 0.005) {
+        suggestions.push({
+          ouv: altOuv.toFixed(2),
+          positions: altPositions.map(p => p.toFixed(2))
+        });
+      }
+    }
+      // Trie les suggestions par distance croissante à l'ouverture d'origine
+    suggestions.sort((a, b) => Math.abs(a.ouv - ouv) - Math.abs(b.ouv - ouv));
 
-      suggestions.innerHTML += validSuggestions.map(s =>
-        `<p>Ouverture : ${s.ouv} m<br>Positions : ${s.positions.join(" m, ")} m</p>`
+    return suggestions;
+  }
+
+  function calculerModeClassique(mode, projos, ouv, tolerance) {
+    const result = document.getElementById("result");
+    const suggestions = document.getElementById("suggestions");
+
+    const entraxe = ouv / (projos - 1);
+    const positions = [];
+    for (let i = 0; i < projos; i++) {
+      const pos = mode === "sym" ? -ouv / 2 + i * entraxe : i * entraxe;
+      positions.push(nettoyerZeroNegatif(+pos.toFixed(2)));
+    }
+
+    result.innerHTML = `<p>Mode : ${mode === "sym" ? "Répartition symétrique" : "Répartition sur mètre"}</p>`;
+    result.innerHTML += `<p>Entraxe : ${entraxe.toFixed(2)} m</p>`;
+    result.innerHTML += `<ul>${positions.map(p => `<li>${p} m</li>`).join("")}</ul>`;
+
+    const alternatives = filtrerAlternatives(ouv, projos, tolerance, mode);
+    if (alternatives.length === 0) {
+      suggestions.innerHTML += `<p>Aucune proposition alternative trouvée.</p>`;
+    } else {
+      suggestions.innerHTML += alternatives.map(a =>
+        `<p>Ouverture : ${a.ouv} m<br>Positions : ${a.positions.join(" m, ")} m</p>`
       ).join("");
     }
-        window.onload = calculer;
-    </script>
+  }
+
+  function calculerModeDore(projos, ouv, tolerance) {
+    const result = document.getElementById("result");
+    const suggestions = document.getElementById("suggestions");
+
+    if (projos < 4) {
+      result.innerHTML = "Le mode doré nécessite au moins 4 projecteurs.";
+      return;
+    }
+
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const nb = projos - 1;
+    let motifs;
+
+    if (nb === 3) motifs = [phi, 1, phi];
+    else if (nb === 4) motifs = [phi, 1, 1, phi];
+    else if (nb === 5) motifs = [phi * phi, phi, 1, phi, phi * phi];
+    else {
+      const base = [];
+      for (let i = 0; i < Math.floor(nb / 2); i++) {
+        base.unshift(Math.pow(phi, i + 1));
+      }
+      motifs = [...base];
+      if (nb % 2 === 1) motifs.push(1);
+      motifs = motifs.concat([...base].reverse());
+    }
+
+    const total = motifs.reduce((a, b) => a + b, 0);
+    const scale = ouv / total;
+    const intervals = motifs.map(val => val * scale);
+    let pos = [0];
+    for (let i = 0; i < intervals.length; i++) {
+      pos.push(pos[i] + intervals[i]);
+    }
+    const shift = (pos.at(-1) - pos[0]) / 2;
+    const final = pos.map(p => nettoyerZeroNegatif(+(p - shift).toFixed(2)));
+
+    result.innerHTML = `<p>Mode : Répartition dorée (nombre d’or)</p>`;
+    afficherPositions(final);
+
+    const alternatives = filtrerAlternatives(ouv, projos, tolerance, "gold", motifs);
+    if (alternatives.length === 0) {
+      suggestions.innerHTML += `<p>Aucune proposition alternative trouvée.</p>`;
+    } else {
+      suggestions.innerHTML += alternatives.map(a =>
+        `<p>Ouverture : ${a.ouv} m<br>Positions : ${a.positions.join(" m, ")} m</p>`
+      ).join("");
+    }
+  }
+
+  function calculer() {
+    const mode = getCurrentMode();
+    const projos = parseInt(document.getElementById("projos").value, 10);
+    const ouv = parseFloat(document.getElementById("editable-value").value);
+    const tolerance = parseInt(document.getElementById("tolerance").value, 10) / 100;
+
+    const error = document.getElementById("error-message");
+    const result = document.getElementById("result");
+    const suggestions = document.getElementById("suggestions");
+
+    error.textContent = "";
+    result.innerHTML = "";
+    suggestions.innerHTML = "<h2>Propositions alternatives</h2>";
+
+    if (isNaN(projos) || isNaN(ouv)) {
+      error.textContent = "Veuillez entrer des valeurs valides.";
+      return;
+    }
+
+    if (mode === "gold") {
+      calculerModeDore(projos, ouv, tolerance);
+    } else {
+      calculerModeClassique(mode, projos, ouv, tolerance);
+    }
+  }
+
+  window.onload = calculer;
+</script>
 </body>
 </html>
