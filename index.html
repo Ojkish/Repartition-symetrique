@@ -129,9 +129,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>Calcul des Projecteurs</h1>
+        <h1>Outil de Répartition</h1>
 
-        <label for="projos">Nombre de projos :</label>
+        <label for="projos">Nombre d'objets :</label>
         <div class="button-container">
             <button class="arrow-button" onclick="changeProjos(-1)">↓</button>
             <input type="number" id="projos" class="editable-value" value="2" min="2" step="1" oninput="calculer()">
@@ -167,7 +167,8 @@
         <label for="mode">Mode de répartition :</label>
         <br>
         <select id="mode" onchange="calculer()">
-            <option value="sym">Symétrique</option>
+            <option value="sym">Symétrique (à partir du centre)</option>
+            </option>
             <option value="lin">Linéaire (à partir d'un bord)</option>
             <option value="gold">Doré (nombre d'or)</option>
         </select>
