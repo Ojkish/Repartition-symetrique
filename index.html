@@ -305,6 +305,14 @@
         transform: scale(0.98);
     }
 
+       /* ============================================================
+       INDICATEUR VISUEL DE SNAP
+    ============================================================ */
+    #editable-value.snapped {
+        background-color: #eef0ff;
+        border-color: var(--primary-color);
+        transition: background-color 0.3s, border-color 0.3s;
+    }
     </style>
 </head>
 <body>
@@ -417,6 +425,19 @@
     </div>
 
 <script>
+    /* ================================================================
+     SNAP AUX VALEURS RONDES
+     Attire le curseur vers les entiers (1, 2, 3…) quand on en est
+     à moins de 0.05 m. S'applique uniquement pendant le glissement.
+  ================================================================ */
+  const SNAP_RADIUS = 0.05;
+
+  function snapValue(val) {
+    const nearest = Math.round(val); // entier le plus proche
+    if (Math.abs(val - nearest) <= SNAP_RADIUS) return nearest;
+    return val;
+  }
+
   let repeatTimeout  = null;
   let repeatInterval = null;
 
@@ -461,15 +482,26 @@
     calculer();
   }
 
-  // Fonction permettant de micro-ajuster l'ouverture
-  function adjustOuv(delta) {
-    const input = document.getElementById("editable-value");
-    let val = parseFloat(input.value) || 0;
-    let newVal = Math.max(4, Math.min(15, Math.round((val + delta) * 10) / 10));
-    input.value = newVal.toFixed(2);
-    syncInputValue();
+  function nettoyerZeroNegatif(val) {
+    return val === -0 ? 0 : val;
+}
+
+// Fonction permettant de micro-ajuster l'ouverture
+function adjustOuv(delta) {
+    const input  = document.getElementById("editable-value");
+    const slider = document.getElementById("ouv");
+    let val    = parseFloat(input.value) || 0;
+    let newVal = Math.max(0.1, Math.round((val + delta) * 10) / 10);
+
+    // Adapter la plage si on dépasse les bornes actuelles du slider
+    if (newVal < parseFloat(slider.min)) slider.min = Math.max(0.1, newVal - 0.5).toFixed(1);
+    if (newVal > parseFloat(slider.max)) slider.max = (newVal + 0.5).toFixed(1);
+
+    input.value  = newVal.toFixed(2);
+    slider.value = newVal.toFixed(1);
+    input.classList.remove('snapped');
     calculer();
-  }
+}
 
   // Fonction permettant d'appliquer une suggestion au clic
   function appliquerAlternative(valeurOuv) {
@@ -486,21 +518,38 @@
     calculer();
   }
 
-  function syncInputValue() {
-    const input = document.getElementById("editable-value");
-    const slider = document.getElementById("ouv");
-    slider.value = parseFloat(input.value).toFixed(1);
-  }
+function syncInputValue() {
+  const input  = document.getElementById("editable-value");
+  const slider = document.getElementById("ouv");
+  let val = parseFloat(input.value);
+  if (isNaN(val)) return;
 
-  function syncSliderValue() {
-    const input = document.getElementById("editable-value");
-    const slider = document.getElementById("ouv");
-    input.value = parseFloat(slider.value).toFixed(2);
-  }
+  // Étend la plage si la valeur tapée dépasse le min ou max actuel
+  if (val < parseFloat(slider.min)) slider.min = Math.max(0.1, val - 0.5).toFixed(1);
+  if (val > parseFloat(slider.max)) slider.max = (val + 0.5).toFixed(1);
 
-  function nettoyerZeroNegatif(val) {
-    return val === -0 ? 0 : val;
+  slider.value = val.toFixed(1);
+  input.classList.remove('snapped'); // saisie manuelle = jamais de snap
+}
+
+function syncSliderValue() {
+  const input  = document.getElementById("editable-value");
+  const slider = document.getElementById("ouv");
+
+  let val = parseFloat(slider.value);
+  const snapped  = snapValue(val);
+  const didSnap  = (snapped !== val);
+
+  if (didSnap) slider.value = snapped.toFixed(1);
+  input.value = snapped.toFixed(2);
+
+  if (didSnap) {
+    input.classList.add('snapped');
+    setTimeout(() => input.classList.remove('snapped'), 600);
+  } else {
+    input.classList.remove('snapped');
   }
+}
 
   // ── CALCULS ─────────────────────────────────────────────────────
 
