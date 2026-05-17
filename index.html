@@ -175,25 +175,41 @@
     }
 
     /* ============================================================
-       SLIDER (OPTIMISÉ MOBILE / GROS DOIGTS)
+       SLIDER ET RANGEÉE DE MICRO-AJUSTEMENT (ÉLARGIE)
     ============================================================ */
+    .slider-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 420px; /* Utilise le maximum d'espace de la carte */
+        gap: 8px;
+        margin-top: 6px;
+    }
+
     input[type="range"] {
         -webkit-appearance: none;
         appearance: none;
-        width: 100%;
-        max-width: 300px;
-        height: 32px; /* Élargit la zone invisible de clic pour le doigt */
+        flex: 1; /* Prend tout l'espace disponible entre les boutons */
+        height: 32px; /* Zone tactile agrandie */
         background: transparent;
         cursor: pointer;
         touch-action: pan-y;
-        margin-top: 6px;
+        margin: 0;
+    }
+
+    /* Boutons de précision plus étroits pour laisser de la place au slider */
+    .micro-btn {
+        margin: 0; 
+        font-size: 1.2rem;
+        width: 32px; /* Réduit de 44px à 32px pour élargir le slider */
     }
 
     /* Le rail du curseur */
     input[type="range"]::-webkit-slider-runnable-track {
         width: 100%;
         height: 6px;
-        background: #a0a0a0; /* Gris qui ressort bien sur le fond actuel */
+        background: #a0a0a0;
         border-radius: 3px;
     }
     input[type="range"]::-moz-range-track {
@@ -207,7 +223,7 @@
     input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        margin-top: -9px; /* Centre la pastille de 24px sur le rail de 6px */
+        margin-top: -9px;
         background-color: var(--primary-color);
         height: 24px;
         width: 24px;
@@ -326,14 +342,26 @@
                 inputmode="decimal"
                 oninput="syncInputValue(); calculer();"
             >
-            <input
-                type="range"
-                id="ouv"
-                min="0.8" max="12" step="0.1"
-                value="5"
-                oninput="syncSliderValue(); calculer();"
-                aria-label="Ouverture en mètres"
-            >
+            <div class="slider-row">
+                <button type="button" class="arrow-button micro-btn" 
+                    onmousedown="startRepeat(() => adjustOuv(-0.1))"
+                    ontouchstart="e_prevent(event); startRepeat(() => adjustOuv(-0.1))"
+                    onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                    ontouchend="stopRepeat()" ontouchcancel="stopRepeat()">-</button>
+                <input
+                    type="range"
+                    id="ouv"
+                    min="0.8" max="12" step="0.1"
+                    value="5"
+                    oninput="syncSliderValue(); calculer();"
+                    aria-label="Ouverture en mètres"
+                >
+                <button type="button" class="arrow-button micro-btn" 
+                    onmousedown="startRepeat(() => adjustOuv(0.1))"
+                    ontouchstart="e_prevent(event); startRepeat(() => adjustOuv(0.1))"
+                    onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                    ontouchend="stopRepeat()" ontouchcancel="stopRepeat()">+</button>
+            </div>
         </div>
 
         <label for="tolerance">Tolérance (en %) :</label>
@@ -425,6 +453,16 @@
     calculer();
   }
 
+  // Fonction permettant de micro-ajuster l'ouverture
+  function adjustOuv(delta) {
+    const input = document.getElementById("editable-value");
+    let val = parseFloat(input.value) || 0;
+    let newVal = Math.max(0.8, Math.min(12, Math.round((val + delta) * 10) / 10));
+    input.value = newVal.toFixed(2);
+    syncInputValue();
+    calculer();
+  }
+
   // Fonction permettant d'appliquer une suggestion au clic
   function appliquerAlternative(valeurOuv) {
     const input = document.getElementById("editable-value");
@@ -449,7 +487,7 @@
   function syncSliderValue() {
     const input = document.getElementById("editable-value");
     const slider = document.getElementById("ouv");
-    input.value = parseFloat(slider.value).toFixed(1);
+    input.value = parseFloat(slider.value).toFixed(2);
   }
 
   function nettoyerZeroNegatif(val) {
