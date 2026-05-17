@@ -2,129 +2,242 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">    <title>Calcul des Projecteurs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calcul des Projecteurs</title>
     <style>
-        html, body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            margin: 0;
-            min-height: 100vh;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            background-color: #fff;
-            overflow-x: hidden; /* ← empêche le débordement horizontal */
-            touch-action: manipulation; /* Bloque le double-tap zoom sans affecter le pincement */
-        }
 
-.container {
-    max-width: 800px;
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
-    padding: 0 10px; /* ← Ajoute du padding horizontal */
-}
+    /* ============================================================
+       VARIABLES CSS
+    ============================================================ */
+    :root {
+        --primary-color:    #4d53ce;
+        --secondary-color:  #dc3545;
+        --border-color:     #ccc;
+        --bg-button:        #f1f1f1;
+        --bg-hover:         #ddd;
+        --text-color:       #333;
+        --font-family:      system-ui, -apple-system, sans-serif;
+        --touch-target:     44px;
 
-.field-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* centre horizontalement */
-  margin-top: 15px;    /* espace au-dessus */
-}
+        /* Couleurs patchapapa */
+        --background-color: #f4f4f4;          /* fond de page : gris très clair */
+        --container-bg:     rgb(187, 183, 183); /* carte : gris moyen */
+    }
 
+    /* ============================================================
+       SÉLECTION DE TEXTE
+    ============================================================ */
+    html, body {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
 
+    input,
+    textarea,
+    #result,
+    #suggestions {
+        -webkit-user-select: text;
+        user-select: text;
+    }
 
-        input, button, select {
-            padding: 8px;
-            margin: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
+    /* ============================================================
+       LAYOUT GÉNÉRAL
 
-        select {
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
-            cursor: pointer;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-        }
+       html { overflow-y: scroll } → réserve toujours la place de la
+       scrollbar. Sans ça, son apparition rétrécit la page et fait
+       changer la largeur du select.
+    ============================================================ */
+    html {
+        overflow-y: scroll;
+        /* Le fond de page doit aussi être sur html pour couvrir
+           la zone derrière la scrollbar et les rebonds iOS */
+        background-color: var(--background-color);
+    }
 
-        p, h1 {
-            font-size: 18px;
-            color: #333;
-        }
+    body {
+        font-family: var(--font-family);
+        margin: 0;
+        min-height: 100vh;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        overflow-x: hidden;
+        background-color: var(--background-color); /* gris très clair */
+        padding: 24px 16px;
+    }
 
-        .error {
-            color: red;
-            text-align: center;
-        }
+    /* ============================================================
+       CARTE PRINCIPALE
+       Même couleur que --container-bg de patchapapa :
+       gris moyen rgb(187,183,183) qui se découpe sur le fond clair.
+    ============================================================ */
+    .container {
+        max-width: 480px;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+        padding: 28px 24px;
 
-        .result {
-    margin-top: 20px;
-    text-align: center;
-    font-weight: bold;       /* Texte en gras */
-    color: #2225b6;          /* Bleu */
-    font-size: 20px;         /* Taille de police plus grande */
-}
+        background-color: var(--container-bg);  /* gris moyen */
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
 
-.suggestions {
-    margin-top: 20px;
-    text-align: center;
-    color: black;            /* Suggestions en noir */
-    font-weight: normal;     /* Pas de gras */
-    font-size: 16px;         /* Taille normale */
-}
+    /* ============================================================
+       TYPOGRAPHIE
+    ============================================================ */
+    h1 {
+        font-size: 1.6rem;
+        color: var(--primary-color);
+        margin-top: 0;
+    }
 
+    p, label {
+        font-size: 16px;
+        color: var(--text-color);
+    }
 
-        .range-container {
-            margin-top: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    /* ============================================================
+       CHAMPS DE SAISIE, BOUTONS, SELECT
+       font-size: 16px MINIMUM → empêche iOS de zoomer au focus.
+    ============================================================ */
+    input, button, select {
+        padding: 8px;
+        margin: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+        font-family: var(--font-family);
+        touch-action: manipulation;
+    }
 
-        input[type="range"] {
-            width: 300px;
-            margin-right: 10px;
-        }
+    input[type="number"] {
+        text-align: center;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background-color: #fff;
+    }
 
-        .editable-value {
-            font-size: 16px;
-            font-weight: bold;
-            color: red;
-            width: 80px;
-            text-align: center;
-        }
+    select {
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background-color: #f9f9f9;
+        cursor: pointer;
+        box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    }
 
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    /* ============================================================
+       BOUTONS ↑ / ↓  — 44×44px minimum
+    ============================================================ */
+    .arrow-button {
+        width:  var(--touch-target);
+        height: var(--touch-target);
+        padding: 0;
+        font-size: 1.4rem;
+        line-height: 1;
+        background-color: var(--bg-button);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        border-radius: 8px;
+        margin: 2px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        /* Empêche la sélection du caractère flèche lors du maintien */
+        -webkit-user-select: none;
+        user-select: none;
+    }
 
-        .arrow-button {
-            padding: 6px;
-            font-size: 14px;
-            background-color: #f1f1f1;
-            border: 1px solid #ccc;
-            cursor: pointer;
-            border-radius: 5px;
-            margin: 2px;
-        }
+    .arrow-button:hover  { background-color: var(--bg-hover); }
+    .arrow-button:active { background-color: #bbb; }
+    .arrow-button:focus  { outline: none; }
 
-        .arrow-button:hover {
-            background-color: #ddd;
-        }
+    /* ============================================================
+       VALEUR ÉDITABLE
+    ============================================================ */
+    .editable-value {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--secondary-color);
+        width: 80px;
+        height: var(--touch-target);
+        text-align: center;
+    }
 
-        .arrow-button:focus {
-            outline: none;
-        }
+    /* ============================================================
+       CONTENEURS
+    ============================================================ */
+    .button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
 
-        #mode {
-            margin-top: 20px;
-            font-size: 16px;
-        }
+    .field-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 15px;
+        margin-bottom: 8px;
+    }
+
+    /* ============================================================
+       SLIDER
+       touch-action: pan-y → scroll vertical autorisé pendant le drag
+    ============================================================ */
+    input[type="range"] {
+        width: 100%;
+        max-width: 300px;
+        margin-top: 6px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+        touch-action: pan-y;
+    }
+
+    /* ============================================================
+       SELECT MODE — largeur stable via wrapper flex
+    ============================================================ */
+    .mode-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 4px;
+    }
+
+    #mode {
+        font-size: 16px;
+        width: 100%;
+        max-width: 340px;
+    }
+
+    /* ============================================================
+       RÉSULTATS ET SUGGESTIONS
+    ============================================================ */
+    .error {
+        color: red;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .result {
+        margin-top: 20px;
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary-color);
+        font-size: 20px;
+    }
+
+    .suggestions {
+        margin-top: 20px;
+        text-align: center;
+        color: var(--text-color);
+        font-weight: normal;
+        font-size: 16px;
+    }
+
     </style>
 </head>
 <body>
@@ -133,45 +246,95 @@
 
         <label for="projos">Nombre d'objets :</label>
         <div class="button-container">
-            <button class="arrow-button" onclick="changeProjos(-1)">↓</button>
-            <input type="number" id="projos" class="editable-value" value="2" min="2" step="1" oninput="calculer()">
-            <button class="arrow-button" onclick="changeProjos(1)">↑</button>
+            <!--
+              RÉPÉTITION AU MAINTIEN :
+              onmousedown / ontouchstart → démarre la répétition
+              onmouseup / onmouseleave / ontouchend / ontouchcancel → l'arrête
+              ontouchstart appelle preventDefault() pour éviter que le navigateur
+              génère un clic synthétique en plus (ce qui doublerait l'action).
+            -->
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeProjos(-1))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeProjos(-1))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Diminuer">↓</button>
+
+            <input
+                type="number"
+                id="projos"
+                class="editable-value"
+                value="2"
+                min="2"
+                step="1"
+                inputmode="numeric"
+                oninput="calculer()"
+            >
+
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeProjos(1))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeProjos(1))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Augmenter">↑</button>
         </div>
 
         <div class="field-container">
-          <label for="editable-value">Ouverture (en mètres) :</label>
-          <input
-            type="number"
-            id="editable-value"
-            class="editable-value"
-            value="5.00"
-            min="0.8" max="12" step="0.1"
-            oninput="syncInputValue(); calculer();"
-          >
-          <input
-            type="range"
-            id="ouv"
-            min="0.8" max="12" step="0.1"
-            value="5"
-            oninput="syncSliderValue(); calculer();"
-          >
+            <label for="editable-value">Ouverture (en mètres) :</label>
+            <input
+                type="number"
+                id="editable-value"
+                class="editable-value"
+                value="5.00"
+                min="0.8" max="12" step="0.1"
+                inputmode="decimal"
+                oninput="syncInputValue(); calculer();"
+            >
+            <input
+                type="range"
+                id="ouv"
+                min="0.8" max="12" step="0.1"
+                value="5"
+                oninput="syncSliderValue(); calculer();"
+                aria-label="Ouverture en mètres"
+            >
         </div>
 
-        <label for="tolerance">Tolérance (en %):</label>
+        <label for="tolerance">Tolérance (en %) :</label>
         <div class="button-container">
-            <button class="arrow-button" onclick="changeTolerance(-10)">↓</button>
-            <input type="number" id="tolerance" class="editable-value" value="10" min="0" max="50" step="10" oninput="calculer()">
-            <button class="arrow-button" onclick="changeTolerance(10)">↑</button>
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeTolerance(-10))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeTolerance(-10))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Diminuer">↓</button>
+
+            <input
+                type="number"
+                id="tolerance"
+                class="editable-value"
+                value="10"
+                min="0" max="50" step="10"
+                inputmode="numeric"
+                oninput="calculer()"
+            >
+
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeTolerance(10))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeTolerance(10))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Augmenter">↑</button>
         </div>
 
         <label for="mode">Mode de répartition :</label>
-        <br>
-        <select id="mode" onchange="calculer()">
-            <option value="sym">Symétrique (à partir du centre)</option>
-            </option>
-            <option value="lin">Linéaire (à partir d'un bord)</option>
-            <option value="gold">Dorée (basée sur le nombre d'or)</option>
-        </select>
+        <div class="mode-container">
+            <select id="mode" onchange="calculer()">
+                <option value="sym">Symétrique (à partir du centre)</option>
+                <option value="lin">Linéaire (à partir d'un bord)</option>
+                <option value="gold">Dorée (basée sur le nombre d'or)</option>
+            </select>
+        </div>
 
         <div id="error-message" class="error"></div>
         <div id="result" class="result"></div>
@@ -182,23 +345,59 @@
     </div>
 
 <script>
-  // Empêche le zoom par double-tap sans désactiver le pincement
-  let lastTouchTime = 0;
-  document.addEventListener('touchend', function (e) {
-      const now = new Date().getTime();
-      if (now - lastTouchTime <= 100) {
-          e.preventDefault();
-      }
-      lastTouchTime = now;
-  }, { passive: false });
+  /* ================================================================
+     RÉPÉTITION AU MAINTIEN DES BOUTONS ↑ / ↓
 
-  document.addEventListener('click', function (e) {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'NUMBER') {
-          e.target.select();
-      }
-  });
+     Principe en 3 temps :
+       1. Au premier appui → action immédiate
+       2. Après 400ms de maintien → début de la répétition rapide
+       3. Répétition toutes les 80ms tant que le doigt reste appuyé
+       4. Au relâchement → tout s'arrête
 
-  // Outils
+     On utilise deux variables :
+       - repeatTimeout  : le délai avant que la répétition commence
+       - repeatInterval : l'intervalle de répétition rapide
+  ================================================================ */
+
+  let repeatTimeout  = null;
+  let repeatInterval = null;
+
+  function startRepeat(fn) {
+    fn(); // 1. action immédiate au premier appui
+
+    // 2. après 400ms, on démarre la répétition rapide
+    repeatTimeout = setTimeout(() => {
+      repeatInterval = setInterval(fn, 80); // 3. répétition toutes les 80ms
+    }, 400);
+  }
+
+  function stopRepeat() {
+    // 4. on annule tout au relâchement
+    clearTimeout(repeatTimeout);
+    clearInterval(repeatInterval);
+    repeatTimeout  = null;
+    repeatInterval = null;
+  }
+
+  // Empêche le clic synthétique généré par le navigateur après touchstart.
+  // Sans ça, un tap mobile déclencherait l'action deux fois.
+  function e_prevent(e) {
+    e.preventDefault();
+  }
+
+  /* ================================================================
+     SÉLECTION AUTOMATIQUE AU FOCUS
+     setTimeout(50ms) nécessaire sur iOS : select() doit attendre
+     que le champ soit activement focusé.
+  ================================================================ */
+  document.addEventListener('focus', function (e) {
+      if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+          setTimeout(() => e.target.select(), 50);
+      }
+  }, true);
+
+  // ── OUTILS ──────────────────────────────────────────────────────
+
   function getCurrentMode() {
     return document.getElementById("mode").value;
   }
@@ -225,19 +424,19 @@
     const input = document.getElementById("editable-value");
     const slider = document.getElementById("ouv");
     slider.value = parseFloat(input.value).toFixed(1);
-    calculer();
   }
 
   function syncSliderValue() {
     const input = document.getElementById("editable-value");
     const slider = document.getElementById("ouv");
     input.value = parseFloat(slider.value).toFixed(1);
-    calculer();
   }
 
   function nettoyerZeroNegatif(val) {
     return val === -0 ? 0 : val;
   }
+
+  // ── CALCULS (inchangés) ──────────────────────────────────────────
 
   function filtrerAlternatives(ouv, projos, tolerance, mode, motifs = null) {
     const min = ouv * (1 - tolerance);
@@ -277,9 +476,7 @@
         });
       }
     }
-      // Trie les suggestions par distance croissante à l'ouverture d'origine
     suggestions.sort((a, b) => Math.abs(a.ouv - ouv) - Math.abs(b.ouv - ouv));
-
     return suggestions;
   }
 
@@ -344,7 +541,7 @@
     const shift = (pos.at(-1) - pos[0]) / 2;
     const final = pos.map(p => nettoyerZeroNegatif(+(p - shift).toFixed(2)));
 
-    result.innerHTML = `<p>Mode : Répartition dorée (nombre d’or)</p>`;
+    result.innerHTML = `<p>Mode : Répartition dorée (nombre d'or)</p>`;
     afficherPositions(final);
 
     const alternatives = filtrerAlternatives(ouv, projos, tolerance, "gold", motifs);
