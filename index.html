@@ -43,15 +43,9 @@
 
     /* ============================================================
        LAYOUT GÉNÉRAL
-
-       html { overflow-y: scroll } → réserve toujours la place de la
-       scrollbar. Sans ça, son apparition rétrécit la page et fait
-       changer la largeur du select.
     ============================================================ */
     html {
         overflow-y: scroll;
-        /* Le fond de page doit aussi être sur html pour couvrir
-           la zone derrière la scrollbar et les rebonds iOS */
         background-color: var(--background-color);
     }
 
@@ -70,8 +64,6 @@
 
     /* ============================================================
        CARTE PRINCIPALE
-       Même couleur que --container-bg de patchapapa :
-       gris moyen rgb(187,183,183) qui se découpe sur le fond clair.
     ============================================================ */
     .container {
         max-width: 480px;
@@ -79,7 +71,6 @@
         box-sizing: border-box;
         text-align: center;
         padding: 28px 24px;
-
         background-color: var(--container-bg);  /* gris moyen */
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -101,7 +92,6 @@
 
     /* ============================================================
        CHAMPS DE SAISIE, BOUTONS, SELECT
-       font-size: 16px MINIMUM → empêche iOS de zoomer au focus.
     ============================================================ */
     input, button, select {
         padding: 8px;
@@ -128,7 +118,7 @@
     }
 
     /* ============================================================
-       BOUTONS ↑ / ↓  — 44×44px minimum
+       BOUTONS ↑ / ↓
     ============================================================ */
     .arrow-button {
         width:  var(--touch-target);
@@ -145,7 +135,6 @@
         align-items: center;
         justify-content: center;
         touch-action: manipulation;
-        /* Empêche la sélection du caractère flèche lors du maintien */
         -webkit-user-select: none;
         user-select: none;
     }
@@ -187,7 +176,6 @@
 
     /* ============================================================
        SLIDER
-       touch-action: pan-y → scroll vertical autorisé pendant le drag
     ============================================================ */
     input[type="range"] {
         width: 100%;
@@ -199,7 +187,7 @@
     }
 
     /* ============================================================
-       SELECT MODE — largeur stable via wrapper flex
+       SELECT MODE
     ============================================================ */
     .mode-container {
         display: flex;
@@ -238,6 +226,24 @@
         font-size: 16px;
     }
 
+    /* Classe ajoutée pour rendre les alternatives cliquables et ergonomiques */
+    .clickable-suggestion {
+        background-color: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        padding: 10px;
+        margin: 8px auto;
+        max-width: 340px;
+        cursor: pointer;
+        transition: background-color 0.1s, transform 0.1s;
+    }
+    .clickable-suggestion:hover {
+        background-color: rgba(255, 255, 255, 0.7);
+    }
+    .clickable-suggestion:active {
+        transform: scale(0.98);
+    }
+
     </style>
 </head>
 <body>
@@ -246,13 +252,6 @@
 
         <label for="projos">Nombre d'objets :</label>
         <div class="button-container">
-            <!--
-              RÉPÉTITION AU MAINTIEN :
-              onmousedown / ontouchstart → démarre la répétition
-              onmouseup / onmouseleave / ontouchend / ontouchcancel → l'arrête
-              ontouchstart appelle preventDefault() pour éviter que le navigateur
-              génère un clic synthétique en plus (ce qui doublerait l'action).
-            -->
             <button class="arrow-button"
                 onmousedown="startRepeat(() => changeProjos(-1))"
                 ontouchstart="e_prevent(event); startRepeat(() => changeProjos(-1))"
@@ -345,51 +344,27 @@
     </div>
 
 <script>
-  /* ================================================================
-     RÉPÉTITION AU MAINTIEN DES BOUTONS ↑ / ↓
-
-     Principe en 3 temps :
-       1. Au premier appui → action immédiate
-       2. Après 400ms de maintien → début de la répétition rapide
-       3. Répétition toutes les 80ms tant que le doigt reste appuyé
-       4. Au relâchement → tout s'arrête
-
-     On utilise deux variables :
-       - repeatTimeout  : le délai avant que la répétition commence
-       - repeatInterval : l'intervalle de répétition rapide
-  ================================================================ */
-
   let repeatTimeout  = null;
   let repeatInterval = null;
 
   function startRepeat(fn) {
-    fn(); // 1. action immédiate au premier appui
-
-    // 2. après 400ms, on démarre la répétition rapide
+    fn(); 
     repeatTimeout = setTimeout(() => {
-      repeatInterval = setInterval(fn, 80); // 3. répétition toutes les 80ms
+      repeatInterval = setInterval(fn, 80); 
     }, 400);
   }
 
   function stopRepeat() {
-    // 4. on annule tout au relâchement
     clearTimeout(repeatTimeout);
     clearInterval(repeatInterval);
     repeatTimeout  = null;
     repeatInterval = null;
   }
 
-  // Empêche le clic synthétique généré par le navigateur après touchstart.
-  // Sans ça, un tap mobile déclencherait l'action deux fois.
   function e_prevent(e) {
     e.preventDefault();
   }
 
-  /* ================================================================
-     SÉLECTION AUTOMATIQUE AU FOCUS
-     setTimeout(50ms) nécessaire sur iOS : select() doit attendre
-     que le champ soit activement focusé.
-  ================================================================ */
   document.addEventListener('focus', function (e) {
       if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
           setTimeout(() => e.target.select(), 50);
@@ -410,6 +385,14 @@
   function changeProjos(delta) {
     const projosInput = document.getElementById("projos");
     projosInput.value = Math.max(2, parseInt(projosInput.value, 10) + delta);
+    calculer();
+  }
+
+  // Fonction permettant d'appliquer une suggestion au clic
+  function appliquerAlternative(valeurOuv) {
+    const input = document.getElementById("editable-value");
+    input.value = parseFloat(valeurOuv).toFixed(2);
+    syncInputValue();
     calculer();
   }
 
@@ -436,7 +419,7 @@
     return val === -0 ? 0 : val;
   }
 
-  // ── CALCULS (inchangés) ──────────────────────────────────────────
+  // ── CALCULS ─────────────────────────────────────────────────────
 
   function filtrerAlternatives(ouv, projos, tolerance, mode, motifs = null) {
     const min = ouv * (1 - tolerance);
@@ -499,8 +482,12 @@
     if (alternatives.length === 0) {
       suggestions.innerHTML += `<p>Aucune proposition alternative trouvée.</p>`;
     } else {
+      // Injection de divs cliquables à la place du texte brut
       suggestions.innerHTML += alternatives.map(a =>
-        `<p>Ouverture : ${a.ouv} m<br>Positions : ${a.positions.join(" m, ")} m</p>`
+        `<div class="clickable-suggestion" onclick="appliquerAlternative(${a.ouv})">
+            <strong>Ouverture : ${a.ouv} m</strong><br>
+            <small>Positions : ${a.positions.join(" m, ")} m</small>
+         </div>`
       ).join("");
     }
   }
@@ -548,8 +535,12 @@
     if (alternatives.length === 0) {
       suggestions.innerHTML += `<p>Aucune proposition alternative trouvée.</p>`;
     } else {
+      // Injection de divs cliquables à la place du texte brut
       suggestions.innerHTML += alternatives.map(a =>
-        `<p>Ouverture : ${a.ouv} m<br>Positions : ${a.positions.join(" m, ")} m</p>`
+        `<div class="clickable-suggestion" onclick="appliquerAlternative(${a.ouv})">
+            <strong>Ouverture : ${a.ouv} m</strong><br>
+            <small>Positions : ${a.positions.join(" m, ")} m</small>
+         </div>`
       ).join("");
     }
   }
