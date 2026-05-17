@@ -144,6 +144,14 @@
     .arrow-button:focus  { outline: none; }
 
     /* ============================================================
+       AFFICHAGE CHIFFRES EN BLEU
+    ============================================================ */
+
+    .num {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+    /* ============================================================
        VALEUR ÉDITABLE
     ============================================================ */
     .editable-value {
@@ -316,7 +324,7 @@
                 type="number"
                 id="projos"
                 class="editable-value"
-                value="2"
+                value="4"
                 min="2"
                 step="1"
                 inputmode="numeric"
@@ -351,7 +359,7 @@
                 <input
                     type="range"
                     id="ouv"
-                    min="0.8" max="12" step="0.1"
+                    min="4" max="15" step="0.1"
                     value="5"
                     oninput="syncSliderValue(); calculer();"
                     aria-label="Ouverture en mètres"
@@ -550,8 +558,12 @@
     }
 
     result.innerHTML = `<p>Mode : ${mode === "sym" ? "Répartition symétrique" : "Répartition sur mètre"}</p>`;
-    result.innerHTML += `<p>Entraxe : ${entraxe.toFixed(2)} m</p>`;
-    result.innerHTML += `<ul>${positions.map(p => `<li>${p} m</li>`).join("")}</ul>`;
+
+    result.innerHTML += `<p>Entraxe : <span class="num">${entraxe.toFixed(2)}</span> m</p>`;
+
+    result.innerHTML += `<ul>${
+      positions.map(p => `<li><span class="num">${p}</span> m</li>`).join("")
+    }</ul>`;
 
     const alternatives = filtrerAlternatives(ouv, projos, tolerance, mode);
     if (alternatives.length === 0) {
@@ -561,8 +573,8 @@
       suggestions.innerHTML += alternatives.map(a =>
         `<div class="clickable-suggestion" onclick="appliquerAlternative(${a.ouv})">
             <strong>Ouverture : ${a.ouv} m</strong><br>
-            <small>Positions : ${a.positions.join(" m, ")} m</small>
-         </div>`
+Positions :
+${a.positions.map(p => `<span class="num">${p}</span> m`).join(", ")}</small>         </div>`
       ).join("");
     }
   }
