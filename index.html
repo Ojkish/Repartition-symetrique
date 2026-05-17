@@ -583,4 +583,589 @@
   window.onload = calculer;
 </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calcul des Projecteurs</title>
+    <style>
+
+    /* ============================================================
+       VARIABLES CSS
+    ============================================================ */
+    :root {
+        --primary-color:    #4d53ce;
+        --secondary-color:  #dc3545;
+        --border-color:     #ccc;
+        --bg-button:        #f1f1f1;
+        --bg-hover:         #ddd;
+        --text-color:       #333;
+        --font-family:      system-ui, -apple-system, sans-serif;
+        --touch-target:     44px;
+
+        /* Couleurs patchapapa */
+        --background-color: #f4f4f4;          /* fond de page : gris très clair */
+        --container-bg:     rgb(187, 183, 183); /* carte : gris moyen */
+    }
+
+    /* ============================================================
+       SÉLECTION DE TEXTE
+    ============================================================ */
+    html, body {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    input,
+    textarea,
+    #result,
+    #suggestions {
+        -webkit-user-select: text;
+        user-select: text;
+    }
+
+    /* ============================================================
+       LAYOUT GÉNÉRAL
+
+       html { overflow-y: scroll } → réserve toujours la place de la
+       scrollbar. Sans ça, son apparition rétrécit la page et fait
+       changer la largeur du select.
+    ============================================================ */
+    html {
+        overflow-y: scroll;
+        /* Le fond de page doit aussi être sur html pour couvrir
+           la zone derrière la scrollbar et les rebonds iOS */
+        background-color: var(--background-color);
+    }
+
+    body {
+        font-family: var(--font-family);
+        margin: 0;
+        min-height: 100vh;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        overflow-x: hidden;
+        background-color: var(--background-color); /* gris très clair */
+        padding: 24px 16px;
+    }
+
+    /* ============================================================
+       CARTE PRINCIPALE
+       Même couleur que --container-bg de patchapapa :
+       gris moyen rgb(187,183,183) qui se découpe sur le fond clair.
+    ============================================================ */
+    .container {
+        max-width: 480px;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+        padding: 28px 24px;
+
+        background-color: var(--container-bg);  /* gris moyen */
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ============================================================
+       TYPOGRAPHIE
+    ============================================================ */
+    h1 {
+        font-size: 1.6rem;
+        color: var(--primary-color);
+        margin-top: 0;
+    }
+
+    p, label {
+        font-size: 16px;
+        color: var(--text-color);
+    }
+
+    /* ============================================================
+       CHAMPS DE SAISIE, BOUTONS, SELECT
+       font-size: 16px MINIMUM → empêche iOS de zoomer au focus.
+    ============================================================ */
+    input, button, select {
+        padding: 8px;
+        margin: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+        font-family: var(--font-family);
+        touch-action: manipulation;
+    }
+
+    input[type="number"] {
+        text-align: center;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background-color: #fff;
+    }
+
+    select {
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background-color: #f9f9f9;
+        cursor: pointer;
+        box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* ============================================================
+       BOUTONS ↑ / ↓  — 44×44px minimum
+    ============================================================ */
+    .arrow-button {
+        width:  var(--touch-target);
+        height: var(--touch-target);
+        padding: 0;
+        font-size: 1.4rem;
+        line-height: 1;
+        background-color: var(--bg-button);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        border-radius: 8px;
+        margin: 2px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        /* Empêche la sélection du caractère flèche lors du maintien */
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .arrow-button:hover  { background-color: var(--bg-hover); }
+    .arrow-button:active { background-color: #bbb; }
+    .arrow-button:focus  { outline: none; }
+
+    /* ============================================================
+       VALEUR ÉDITABLE
+    ============================================================ */
+    .editable-value {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--secondary-color);
+        width: 80px;
+        height: var(--touch-target);
+        text-align: center;
+    }
+
+    /* ============================================================
+       CONTENEURS
+    ============================================================ */
+    .button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+
+    .field-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 15px;
+        margin-bottom: 8px;
+    }
+
+    /* ============================================================
+       SLIDER
+       touch-action: pan-y → scroll vertical autorisé pendant le drag
+    ============================================================ */
+    input[type="range"] {
+        width: 100%;
+        max-width: 300px;
+        margin-top: 6px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+        touch-action: pan-y;
+    }
+
+    /* ============================================================
+       SELECT MODE — largeur stable via wrapper flex
+    ============================================================ */
+    .mode-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 4px;
+    }
+
+    #mode {
+        font-size: 16px;
+        width: 100%;
+        max-width: 340px;
+    }
+
+    /* ============================================================
+       RÉSULTATS ET SUGGESTIONS
+    ============================================================ */
+    .error {
+        color: red;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .result {
+        margin-top: 20px;
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary-color);
+        font-size: 20px;
+    }
+
+    .suggestions {
+        margin-top: 20px;
+        text-align: center;
+        color: var(--text-color);
+        font-weight: normal;
+        font-size: 16px;
+    }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Outil de Répartition</h1>
+
+        <label for="projos">Nombre d'objets :</label>
+        <div class="button-container">
+            <!--
+              RÉPÉTITION AU MAINTIEN :
+              onmousedown / ontouchstart → démarre la répétition
+              onmouseup / onmouseleave / ontouchend / ontouchcancel → l'arrête
+              ontouchstart appelle preventDefault() pour éviter que le navigateur
+              génère un clic synthétique en plus (ce qui doublerait l'action).
+            -->
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeProjos(-1))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeProjos(-1))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Diminuer">↓</button>
+
+            <input
+                type="number"
+                id="projos"
+                class="editable-value"
+                value="2"
+                min="2"
+                step="1"
+                inputmode="numeric"
+                oninput="calculer()"
+            >
+
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeProjos(1))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeProjos(1))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Augmenter">↑</button>
+        </div>
+
+        <div class="field-container">
+            <label for="editable-value">Ouverture (en mètres) :</label>
+            <input
+                type="number"
+                id="editable-value"
+                class="editable-value"
+                value="5.00"
+                min="0.8" max="12" step="0.1"
+                inputmode="decimal"
+                oninput="syncInputValue(); calculer();"
+            >
+            <input
+                type="range"
+                id="ouv"
+                min="0.8" max="12" step="0.1"
+                value="5"
+                oninput="syncSliderValue(); calculer();"
+                aria-label="Ouverture en mètres"
+            >
+        </div>
+
+        <label for="tolerance">Tolérance (en %) :</label>
+        <div class="button-container">
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeTolerance(-10))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeTolerance(-10))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Diminuer">↓</button>
+
+            <input
+                type="number"
+                id="tolerance"
+                class="editable-value"
+                value="10"
+                min="0" max="50" step="10"
+                inputmode="numeric"
+                oninput="calculer()"
+            >
+
+            <button class="arrow-button"
+                onmousedown="startRepeat(() => changeTolerance(10))"
+                ontouchstart="e_prevent(event); startRepeat(() => changeTolerance(10))"
+                onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+                ontouchend="stopRepeat()" ontouchcancel="stopRepeat()"
+                aria-label="Augmenter">↑</button>
+        </div>
+
+        <label for="mode">Mode de répartition :</label>
+        <div class="mode-container">
+            <select id="mode" onchange="calculer()">
+                <option value="sym">Symétrique (à partir du centre)</option>
+                <option value="lin">Linéaire (à partir d'un bord)</option>
+                <option value="gold">Dorée (basée sur le nombre d'or)</option>
+            </select>
+        </div>
+
+        <div id="error-message" class="error"></div>
+        <div id="result" class="result"></div>
+
+        <div id="suggestions" class="suggestions">
+            <h2>Propositions alternatives</h2>
+        </div>
+    </div>
+
+<script>
+  /* ================================================================
+     RÉPÉTITION AU MAINTIEN DES BOUTONS ↑ / ↓
+
+     Principe en 3 temps :
+       1. Au premier appui → action immédiate
+       2. Après 400ms de maintien → début de la répétition rapide
+       3. Répétition toutes les 80ms tant que le doigt reste appuyé
+       4. Au relâchement → tout s'arrête
+
+     On utilise deux variables :
+       - repeatTimeout  : le délai avant que la répétition commence
+       - repeatInterval : l'intervalle de répétition rapide
+  ================================================================ */
+
+  let repeatTimeout  = null;
+  let repeatInterval = null;
+
+  function startRepeat(fn) {
+    fn(); // 1. action immédiate au premier appui
+
+    // 2. après 400ms, on démarre la répétition rapide
+    repeatTimeout = setTimeout(() => {
+      repeatInterval = setInterval(fn, 80); // 3. répétition toutes les 80ms
+    }, 400);
+  }
+
+  function stopRepeat() {
+    // 4. on annule tout au relâchement
+    clearTimeout(repeatTimeout);
+    clearInterval(repeatInterval);
+    repeatTimeout  = null;
+    repeatInterval = null;
+  }
+
+  // Empêche le clic synthétique généré par le navigateur après touchstart.
+  // Sans ça, un tap mobile déclencherait l'action deux fois.
+  function e_prevent(e) {
+    e.preventDefault();
+  }
+
+  /* ================================================================
+     SÉLECTION AUTOMATIQUE AU FOCUS
+     setTimeout(50ms) nécessaire sur iOS : select() doit attendre
+     que le champ soit activement focusé.
+  ================================================================ */
+  document.addEventListener('focus', function (e) {
+      if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+          setTimeout(() => e.target.select(), 50);
+      }
+  }, true);
+
+  // ── OUTILS ──────────────────────────────────────────────────────
+
+  function getCurrentMode() {
+    return document.getElementById("mode").value;
+  }
+
+  function afficherPositions(pos) {
+    const result = document.getElementById("result");
+    result.innerHTML = `<p>Positions :</p><ul>${pos.map(p => `<li>${p} m</li>`).join("")}</ul>`;
+  }
+
+  function changeProjos(delta) {
+    const projosInput = document.getElementById("projos");
+    projosInput.value = Math.max(2, parseInt(projosInput.value, 10) + delta);
+    calculer();
+  }
+
+  function changeTolerance(delta) {
+    const toleranceInput = document.getElementById("tolerance");
+    let newValue = Math.max(0, Math.min(50, parseInt(toleranceInput.value, 10) + delta));
+    toleranceInput.value = newValue;
+    calculer();
+  }
+
+  function syncInputValue() {
+    const input = document.getElementById("editable-value");
+    const slider = document.getElementById("ouv");
+    slider.value = parseFloat(input.value).toFixed(1);
+  }
+
+  function syncSliderValue() {
+    const input = document.getElementById("editable-value");
+    const slider = document.getElementById("ouv");
+    input.value = parseFloat(slider.value).toFixed(1);
+  }
+
+  function nettoyerZeroNegatif(val) {
+    return val === -0 ? 0 : val;
+  }
+
+  // ── CALCULS (inchangés) ──────────────────────────────────────────
+
+  function filtrerAlternatives(ouv, projos, tolerance, mode, motifs = null) {
+    const min = ouv * (1 - tolerance);
+    const max = ouv * (1 + tolerance);
+    const minCents = Math.ceil(min * 100);
+    const maxCents = Math.floor(max * 100);
+    const suggestions = [];
+
+    for (let cents = Math.ceil(minCents / 10) * 10; cents <= maxCents; cents += 10) {
+      const altOuv = cents / 100;
+      const entraxe = altOuv / (projos - 1);
+      let altPositions;
+
+      if (mode === "gold" && motifs) {
+        const total = motifs.reduce((sum, val) => sum + val, 0);
+        const scale = altOuv / total;
+        const scaled = motifs.map(m => m * scale);
+        altPositions = [0];
+        for (let i = 0; i < scaled.length; i++) {
+          altPositions.push(altPositions[i] + scaled[i]);
+        }
+        const shift = (altPositions.at(-1) - altPositions[0]) / 2;
+        altPositions = altPositions.map(p => nettoyerZeroNegatif(+(p - shift).toFixed(2)));
+      } else {
+        altPositions = [];
+        for (let i = 0; i < projos; i++) {
+          const pos = mode === "sym" ? -altOuv / 2 + i * entraxe : i * entraxe;
+          altPositions.push(nettoyerZeroNegatif(+pos.toFixed(2)));
+        }
+      }
+
+      const estPropre = altPositions.every(p => Math.round(p * 100) % 5 === 0);
+      if (estPropre && Math.abs(altOuv - ouv) > 0.005) {
+        suggestions.push({
+          ouv: altOuv.toFixed(2),
+          positions: altPositions.map(p => p.toFixed(2))
+        });
+      }
+    }
+    suggestions.sort((a, b) => Math.abs(a.ouv - ouv) - Math.abs(b.ouv - ouv));
+    return suggestions;
+  }
+
+  function calculerModeClassique(mode, projos, ouv, tolerance) {
+    const result = document.getElementById("result");
+    const suggestions = document.getElementById("suggestions");
+
+    const entraxe = ouv / (projos - 1);
+    const positions = [];
+    for (let i = 0; i < projos; i++) {
+      const pos = mode === "sym" ? -ouv / 2 + i * entraxe : i * entraxe;
+      positions.push(nettoyerZeroNegatif(+pos.toFixed(2)));
+    }
+
+    result.innerHTML = `<p>Mode : ${mode === "sym" ? "Répartition symétrique" : "Répartition sur mètre"}</p>`;
+    result.innerHTML += `<p>Entraxe : ${entraxe.toFixed(2)} m</p>`;
+    result.innerHTML += `<ul>${positions.map(p => `<li>${p} m</li>`).join("")}</ul>`;
+
+    const alternatives = filtrerAlternatives(ouv, projos, tolerance, mode);
+    if (alternatives.length === 0) {
+      suggestions.innerHTML += `<p>Aucune proposition alternative trouvée.</p>`;
+    } else {
+      suggestions.innerHTML += alternatives.map(a =>
+        `<p>Ouverture : ${a.ouv} m<br>Positions : ${a.positions.join(" m, ")} m</p>`
+      ).join("");
+    }
+  }
+
+  function calculerModeDore(projos, ouv, tolerance) {
+    const result = document.getElementById("result");
+    const suggestions = document.getElementById("suggestions");
+
+    if (projos < 4) {
+      result.innerHTML = "Le mode doré nécessite au moins 4 projecteurs.";
+      return;
+    }
+
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const nb = projos - 1;
+    let motifs;
+
+    if (nb === 3) motifs = [phi, 1, phi];
+    else if (nb === 4) motifs = [phi, 1, 1, phi];
+    else if (nb === 5) motifs = [phi * phi, phi, 1, phi, phi * phi];
+    else {
+      const base = [];
+      for (let i = 0; i < Math.floor(nb / 2); i++) {
+        base.unshift(Math.pow(phi, i + 1));
+      }
+      motifs = [...base];
+      if (nb % 2 === 1) motifs.push(1);
+      motifs = motifs.concat([...base].reverse());
+    }
+
+    const total = motifs.reduce((a, b) => a + b, 0);
+    const scale = ouv / total;
+    const intervals = motifs.map(val => val * scale);
+    let pos = [0];
+    for (let i = 0; i < intervals.length; i++) {
+      pos.push(pos[i] + intervals[i]);
+    }
+    const shift = (pos.at(-1) - pos[0]) / 2;
+    const final = pos.map(p => nettoyerZeroNegatif(+(p - shift).toFixed(2)));
+
+    result.innerHTML = `<p>Mode : Répartition dorée (nombre d'or)</p>`;
+    afficherPositions(final);
+
+    const alternatives = filtrerAlternatives(ouv, projos, tolerance, "gold", motifs);
+    if (alternatives.length === 0) {
+      suggestions.innerHTML += `<p>Aucune proposition alternative trouvée.</p>`;
+    } else {
+      suggestions.innerHTML += alternatives.map(a =>
+        `<p>Ouverture : ${a.ouv} m<br>Positions : ${a.positions.join(" m, ")} m</p>`
+      ).join("");
+    }
+  }
+
+  function calculer() {
+    const mode = getCurrentMode();
+    const projos = parseInt(document.getElementById("projos").value, 10);
+    const ouv = parseFloat(document.getElementById("editable-value").value);
+    const tolerance = parseInt(document.getElementById("tolerance").value, 10) / 100;
+
+    const error = document.getElementById("error-message");
+    const result = document.getElementById("result");
+    const suggestions = document.getElementById("suggestions");
+
+    error.textContent = "";
+    result.innerHTML = "";
+    suggestions.innerHTML = "<h2>Propositions alternatives</h2>";
+
+    if (isNaN(projos) || isNaN(ouv)) {
+      error.textContent = "Veuillez entrer des valeurs valides.";
+      return;
+    }
+
+    if (mode === "gold") {
+      calculerModeDore(projos, ouv, tolerance);
+    } else {
+      calculerModeClassique(mode, projos, ouv, tolerance);
+    }
+  }
+
+  window.onload = calculer;
+</script>
+</body>
 </html>
