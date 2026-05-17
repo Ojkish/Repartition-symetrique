@@ -465,7 +465,7 @@
   function adjustOuv(delta) {
     const input = document.getElementById("editable-value");
     let val = parseFloat(input.value) || 0;
-    let newVal = Math.max(0.8, Math.min(12, Math.round((val + delta) * 10) / 10));
+    let newVal = Math.max(4, Math.min(15, Math.round((val + delta) * 10) / 10));
     input.value = newVal.toFixed(2);
     syncInputValue();
     calculer();
